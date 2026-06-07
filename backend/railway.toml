@@ -1,8 +1,8 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install && npm run build && npx prisma generate"
+buildCommand = "npm ci && npx prisma generate && npm run build"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "node dist/index.js"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3

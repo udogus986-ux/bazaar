@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// KULLANICI TABLOSU
+// Siteye kayıt olan herkes burada saklanır
+model User {
+  id        String   @id @default(cuid())  // Otomatik benzersiz ID
+  email     String   @unique               // Aynı email ile iki kayıt olmaz
+  password  String                         // bcrypt ile şifrelenmiş
+  name      String
+  role      Role     @default(USER)        // USER veya ADMIN
+  createdAt DateTime @default(now())
+
+  // İlişkiler: Bu kullanıcıya ait siparişler ve sepet
+  orders    Order[]
+  cartItems CartItem[]
+  addresses  Address[]
+}
+
+// Kullanıcı rolleri: normal kullanıcı mı, admin mi?
+enum Role {
+  USER
+  ADMIN
+}
+
+// ÜRÜN TABLOSU
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  stock       Int      @default(0)         // Kaç adet stok var
+  image       String?                      // Resim URL'si (opsiyonel)
+  category    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt          // Her güncellemede otomatik değişir
+
+  // İlişkiler
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+}
+
+// SEPETTEKİ ÜRÜNLER
+// Her kullanıcının sepetindeki ürünler burada tutulur
+model CartItem {
+  id        String  @id @default(cuid())
+  quantity  Int     @default(1)
+
+  // Hangi kullanıcının sepeti?
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Hangi ürün?
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Aynı kullanıcı aynı ürünü bir kez ekleyebilir
+  @@unique([userId, productId])
+}
+
+// SİPARİŞ TABLOSU
+model Order {
+  id        String      @id @default(cuid())
+  status    OrderStatus @default(PENDING)
+  total     Float
+  createdAt DateTime    @default(now())
+  addressId  String?
+address    Address? @relation(fields: [addressId], references: [id])
+  // Hangi kullanıcının siparişi?
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+
+  // Siparişin içindeki ürünler
+  items     OrderItem[]
+}
+
+// Sipariş durumları
+enum OrderStatus {
+  PENDING    // Bekliyor
+  PROCESSING // İşleniyor
+  SHIPPED    // Kargoya verildi
+  DELIVERED  // Teslim edildi
+  CANCELLED  // İptal edildi
+}
+
+// SİPARİŞ İÇİNDEKİ HER BİR ÜRÜN
+// Bir siparişte birden fazla ürün olabilir
+model OrderItem {
+  id        String  @id @default(cuid())
+  quantity  Int
+  price     Float   // Satın alındığı andaki fiyat (ürün fiyatı sonradan değişebilir)
+
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+}
+model Address {
+  id         String   @id @default(cuid())
+  title      String   // "Ev", "İş" gibi
+  fullName   String
+  phone      String
+  city       String
+  district   String
+  address    String
+  zipCode    String?
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders     Order[]
+}

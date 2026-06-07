@@ -13,8 +13,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: ['https://bazaar-mauve-one.vercel.app', 'http://localhost:5174'],
-  credentials: true,
+  origin: '*',
+  credentials: false,
 }));
 app.use(express.json());
 

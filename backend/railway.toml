@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install && node node_modules/prisma/build/index.js generate && npm run build"
+buildCommand = "npm install && node node_modules/prisma/build/index.js generate && node node_modules/typescript/bin/tsc"
 
 [deploy]
 startCommand = "node dist/index.js"
